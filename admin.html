@@ -276,7 +276,7 @@ body{background:var(--black);color:var(--text-main);font-family:var(--font-ui);m
       </div>
       <table class="data-table">
         <thead>
-          <tr><th>Emoji</th><th>Title</th><th>Artist</th><th>Our Song</th><th>Actions</th></tr>
+          <tr><th>Emoji</th><th>Title</th><th>Artist</th><th>YouTube</th><th>Our Song</th><th>Actions</th></tr>
         </thead>
         <tbody id="playlist-table-body"></tbody>
       </table>
@@ -403,35 +403,56 @@ body{background:var(--black);color:var(--text-main);font-family:var(--font-ui);m
 
 <!-- Song Modal -->
 <div class="modal-bg" id="song-modal">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box" style="max-width:500px;">
     <button class="modal-close-btn" onclick="closeModal('song-modal')">✕</button>
-    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:24px;
+    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:8px;
       background:linear-gradient(135deg,var(--pink),var(--cyan));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">Add Song</h3>
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">Add Song 🎵</h3>
+
+    <!-- YouTube URL instructions box -->
+    <div style="background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.2);
+      border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:0.78rem;
+      color:rgba(200,180,255,0.8);line-height:1.6;">
+      <strong style="color:var(--cyan);">How to add YouTube music:</strong><br/>
+      1. Open any YouTube video or song<br/>
+      2. Copy the URL from your browser (e.g. <code style="color:var(--pink);font-size:0.72rem;">https://www.youtube.com/watch?v=abc123</code>)<br/>
+      3. Paste it in the YouTube URL field below<br/>
+      <span style="color:var(--pink-soft);">✦ Short links (youtu.be/...) also work!</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">YouTube URL ✦ Required for audio</label>
+      <input type="text" class="form-input" id="song-url"
+        placeholder="https://www.youtube.com/watch?v=..."
+        style="border-color:rgba(0,245,255,0.3);"/>
+      <div id="yt-preview" style="margin-top:8px;font-size:0.72rem;color:var(--text-muted);"></div>
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Song Title</label>
-        <input type="text" class="form-input" id="song-title"/>
+        <input type="text" class="form-input" id="song-title" placeholder="e.g. Thousand Years"/>
       </div>
       <div class="form-group">
         <label class="form-label">Artist</label>
-        <input type="text" class="form-input" id="song-artist"/>
+        <input type="text" class="form-input" id="song-artist" placeholder="e.g. Christina Perri"/>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Emoji</label>
-        <input type="text" class="form-input" id="song-emoji" placeholder="🎵" maxlength="4"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Audio URL (optional)</label>
-        <input type="text" class="form-input" id="song-url" placeholder="https://..."/>
-      </div>
+
+    <div class="form-group">
+      <label class="form-label">Emoji (for album art)</label>
+      <input type="text" class="form-input" id="song-emoji" placeholder="🎵" maxlength="4" style="max-width:80px;"/>
     </div>
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;margin-bottom:20px;">
-      <input type="checkbox" id="song-pinned" style="accent-color:var(--pink)"/> Our Song (pinned)
+
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;margin-bottom:24px;color:var(--text-main);">
+      <input type="checkbox" id="song-pinned" style="accent-color:var(--pink);width:16px;height:16px;"/>
+      <span>📌 Pin as <strong style="color:var(--pink);">Our Song</strong> (shows first in playlist)</span>
     </label>
-    <button class="btn btn-primary" onclick="saveSong()">Add Song 🎵</button>
+
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-primary" onclick="saveSong()">Add to Playlist ♥</button>
+      <button class="btn btn-secondary" onclick="closeModal('song-modal')">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -589,25 +610,76 @@ async function saveMemory() {
   if (res.success) { toast('Memory added ✦'); closeModal('memory-modal'); loadMemories(); }
 }
 
+/* ── YouTube ID extractor (same logic as frontend) ── */
+function extractVideoId(url) {
+  if (!url) return null;
+  url = url.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0];
+    if (u.searchParams.get('v'))   return u.searchParams.get('v');
+    if (u.pathname.startsWith('/embed/'))  return u.pathname.split('/')[2];
+    if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2];
+  } catch(_) {}
+  return null;
+}
+
 /* ── Playlist ── */
 async function loadPlaylist() {
   const data  = await fetch('/api/playlist').then(r=>r.json());
   const tbody = document.getElementById('playlist-table-body');
   tbody.innerHTML = '';
+  if (!data.playlist?.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">
+      No songs yet — add your first one ♥</td></tr>`;
+    return;
+  }
   data.playlist.forEach(s => {
+    const videoId = extractVideoId(s.url || '');
+    const hasAudio = !!videoId;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${s.emoji}</td>
+      <td style="font-size:1.3rem;">${s.emoji}</td>
       <td><strong>${s.title}</strong></td>
       <td style="color:var(--text-muted)">${s.artist}</td>
-      <td>${s.pinned?'<span class="badge badge-pink">Our Song</span>':'-'}</td>
-      <td><button class="btn-icon" onclick="deleteSong(${s.id})">🗑️</button></td>
+      <td>
+        ${hasAudio
+          ? `<a href="https://www.youtube.com/watch?v=${videoId}" target="_blank"
+               style="color:var(--cyan);font-size:0.72rem;text-decoration:none;">▶ YouTube ↗</a>`
+          : `<span style="color:#f87171;font-size:0.7rem;">No URL</span>`
+        }
+      </td>
+      <td>${s.pinned ? '<span class="badge badge-pink">📌 Our Song</span>' : '-'}</td>
+      <td><button class="btn-icon" onclick="deleteSong(${s.id})" title="Delete">🗑️</button></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function openSongModal() { openModal('song-modal'); }
+function openSongModal() {
+  // Clear fields
+  ['song-url','song-title','song-artist','song-emoji'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('song-pinned').checked = false;
+  document.getElementById('yt-preview').textContent = '';
+  openModal('song-modal');
+
+  // Live YouTube URL validator
+  document.getElementById('song-url').addEventListener('input', function() {
+    const url     = this.value.trim();
+    const preview = document.getElementById('yt-preview');
+    const videoId = extractVideoId(url);
+    if (videoId) {
+      preview.innerHTML = `✅ Valid YouTube link — <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" style="color:var(--cyan);">Preview ↗</a>`;
+    } else if (url.length > 5) {
+      preview.innerHTML = `<span style="color:#f87171;">⚠ Doesn't look like a YouTube URL</span>`;
+    } else {
+      preview.textContent = '';
+    }
+  });
+}
 
 async function saveSong() {
   const body = {

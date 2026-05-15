@@ -2081,82 +2081,287 @@ function initSurprisePopup() {
   });
 }
 
-/* ──────────────────────────────────────────
-   MUSIC PLAYER (simulated — no audio files needed)
-   ────────────────────────────────────────── */
-function initMusicPlayer() {
+/* ══════════════════════════════════════════════════════
+   MUSIC PLAYER — YouTube IFrame API
+   ══════════════════════════════════════════════════════
+   Supports full YouTube URLs, short youtu.be links,
+   and plain video IDs. Falls back gracefully if a
+   track has no URL. Volume, prev/next, progress bar,
+   album spin, and auto-advance all work correctly.
+   ══════════════════════════════════════════════════════ */
+
+/* ── Load YouTube IFrame API script ── */
+(function loadYTAPI() {
+  const tag = document.createElement('script');
+  tag.src   = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+/* ── Global YT player state ── */
+let ytPlayer        = null;   // YouTube IFrame player instance
+let ytReady         = false;  // API loaded flag
+let musicCurrent    = 0;      // current track index
+let musicPlaying    = false;  // play state
+let musicVolume     = 60;     // 0–100
+let progressTimer   = null;   // setInterval for progress bar
+
+/* ── Called automatically by YouTube API when ready ── */
+window.onYouTubeIframeAPIReady = function() {
+  ytReady = true;
+
+  // Create hidden player div if not already present
+  if (!document.getElementById('yt-player-frame')) {
+    const div = document.createElement('div');
+    div.id    = 'yt-player-frame';
+    div.style.cssText = 'position:fixed;bottom:-9999px;left:-9999px;width:1px;height:1px;pointer-events:none;';
+    document.body.appendChild(div);
+  }
+
+  ytPlayer = new YT.Player('yt-player-frame', {
+    height: '1', width: '1',
+    playerVars: {
+      autoplay:       0,
+      controls:       0,
+      disablekb:      1,
+      fs:             0,
+      iv_load_policy: 3,
+      modestbranding: 1,
+      rel:            0,
+      origin:         window.location.origin,
+    },
+    events: {
+      onReady:       onPlayerReady,
+      onStateChange: onPlayerStateChange,
+      onError:       onPlayerError,
+    }
+  });
+};
+
+function onPlayerReady() {
+  ytPlayer.setVolume(musicVolume);
+  // Load first track silently (don't autoplay — needs user gesture)
+  musicLoadTrack(musicCurrent, false);
+}
+
+function onPlayerStateChange(event) {
+  const S = YT.PlayerState;
+  if (event.data === S.PLAYING) {
+    musicPlaying = true;
+    document.getElementById('play-btn').textContent = '⏸';
+    document.getElementById('album-art').classList.add('playing');
+    startProgressBar();
+  } else if (event.data === S.PAUSED || event.data === S.BUFFERING) {
+    // Don't change UI on buffering — it auto-resumes
+    if (event.data === S.PAUSED) {
+      musicPlaying = false;
+      document.getElementById('play-btn').textContent = '▶';
+      document.getElementById('album-art').classList.remove('playing');
+      clearInterval(progressTimer);
+    }
+  } else if (event.data === S.ENDED) {
+    // Auto-advance to next track
+    musicNext();
+  }
+}
+
+function onPlayerError(event) {
+  // Video unavailable or blocked — skip to next
+  console.warn('[Music] YouTube error', event.data, '— skipping track');
+  setTimeout(musicNext, 1200);
+}
+
+/* ── Extract YouTube video ID from any URL format ── */
+function extractYouTubeID(url) {
+  if (!url) return null;
+  url = url.trim();
+
+  // Already a bare ID (11 chars, no slashes)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+
+  try {
+    const u = new URL(url);
+    // youtu.be/ID
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0];
+    // youtube.com/watch?v=ID
+    if (u.searchParams.get('v')) return u.searchParams.get('v');
+    // youtube.com/embed/ID
+    if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2];
+    // youtube.com/shorts/ID
+    if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2];
+  } catch (_) {}
+  return null;
+}
+
+/* ── Load a track into the player ── */
+function musicLoadTrack(index, autoplay = true) {
   const playlist = DATA.playlist;
-  let current = 0, playing = false, progress = 0, volume = 60;
-  let progressInterval;
+  if (!playlist.length) return;
 
-  const titleEl    = document.getElementById('music-title');
-  const artistEl   = document.getElementById('music-artist');
-  const albumEl    = document.getElementById('album-art');
-  const playBtn    = document.getElementById('play-btn');
-  const prevBtn    = document.getElementById('prev-btn');
-  const nextBtn    = document.getElementById('next-btn');
-  const fill       = document.getElementById('music-progress-fill');
-  const volSlider  = document.getElementById('volume-slider');
+  // Wrap index
+  musicCurrent = ((index % playlist.length) + playlist.length) % playlist.length;
+  const track  = playlist[musicCurrent];
 
-  const emojis = ['🎵','🌸','💜','💎','⭐','🌿'];
+  // Update UI
+  document.getElementById('music-title').textContent  = track.title  || 'Unknown';
+  document.getElementById('music-artist').textContent = track.artist || '♡ For Naomi';
+  document.getElementById('album-art').textContent    = track.emoji  || '🎵';
+  document.getElementById('music-progress-fill').style.width = '0%';
+  clearInterval(progressTimer);
 
-  function loadTrack(i) {
-    const t = playlist[i];
-    titleEl.textContent  = t.title;
-    artistEl.textContent = t.artist;
-    albumEl.textContent  = emojis[i % emojis.length];
-    progress = 0;
-    fill.style.width = '0%';
+  // Get YouTube ID
+  const videoId = extractYouTubeID(track.url || '');
+
+  if (!videoId || !ytPlayer || !ytReady) {
+    // No valid URL — show "No audio" state and move on after 2s if playing
+    document.getElementById('music-title').textContent = (track.title || 'Track') + ' (no audio)';
+    if (autoplay && musicPlaying) setTimeout(musicNext, 2000);
+    return;
   }
 
-  function startProgress() {
-    clearInterval(progressInterval);
-    progressInterval = setInterval(() => {
-      if (!playing) return;
-      progress += 0.4;
-      fill.style.width = Math.min(progress, 100) + '%';
-      if (progress >= 100) { nextTrack(); }
-    }, 300);
+  if (autoplay) {
+    ytPlayer.loadVideoById(videoId);   // load + autoplay
+  } else {
+    ytPlayer.cueVideoById(videoId);    // load silently
   }
+  ytPlayer.setVolume(musicVolume);
+}
 
-  function play() {
-    playing = true;
-    playBtn.textContent = '⏸';
-    albumEl.classList.add('playing');
-    startProgress();
-  }
-  function pause() {
-    playing = false;
-    playBtn.textContent = '▶';
-    albumEl.classList.remove('playing');
-  }
-  function nextTrack() {
-    current = (current + 1) % playlist.length;
-    loadTrack(current);
-    if (playing) startProgress();
-  }
-  function prevTrack() {
-    current = (current - 1 + playlist.length) % playlist.length;
-    loadTrack(current);
-    if (playing) startProgress();
-  }
+/* ── Progress bar ── */
+function startProgressBar() {
+  clearInterval(progressTimer);
+  progressTimer = setInterval(() => {
+    if (!ytPlayer || !musicPlaying) return;
+    try {
+      const duration = ytPlayer.getDuration()  || 0;
+      const current  = ytPlayer.getCurrentTime() || 0;
+      if (duration > 0) {
+        const pct = (current / duration) * 100;
+        document.getElementById('music-progress-fill').style.width = pct + '%';
+      }
+    } catch (_) {}
+  }, 800);
+}
 
-  playBtn.addEventListener('click', () => playing ? pause() : play());
-  nextBtn.addEventListener('click', nextTrack);
-  prevBtn.addEventListener('click', prevTrack);
+/* ── Controls ── */
+function musicPlay() {
+  if (!ytPlayer || !ytReady) return;
+  const videoId = extractYouTubeID(DATA.playlist[musicCurrent]?.url || '');
+  if (!videoId) { musicNext(); return; }
+  ytPlayer.playVideo();
+  musicPlaying = true;
+}
 
-  volSlider.addEventListener('input', function() {
-    volume = +this.value;
-    const pct = volume / 100;
-    this.style.background = `linear-gradient(90deg, var(--pink) ${volume}%, var(--glass-border) ${volume}%)`;
+function musicPause() {
+  if (!ytPlayer || !ytReady) return;
+  ytPlayer.pauseVideo();
+  musicPlaying = false;
+  document.getElementById('play-btn').textContent = '▶';
+  document.getElementById('album-art').classList.remove('playing');
+  clearInterval(progressTimer);
+}
+
+function musicNext() {
+  musicLoadTrack(musicCurrent + 1, musicPlaying);
+}
+
+function musicPrev() {
+  // If more than 3s in, restart current track; else go to previous
+  let restart = false;
+  try { restart = ytPlayer && ytPlayer.getCurrentTime() > 3; } catch(_) {}
+  if (restart) {
+    ytPlayer.seekTo(0);
+  } else {
+    musicLoadTrack(musicCurrent - 1, musicPlaying);
+  }
+}
+
+/* ── Click on progress bar to seek ── */
+document.getElementById('music-progress-bar').addEventListener('click', function(e) {
+  if (!ytPlayer || !ytReady) return;
+  const rect = this.getBoundingClientRect();
+  const pct  = (e.clientX - rect.left) / rect.width;
+  try {
+    const duration = ytPlayer.getDuration();
+    if (duration) ytPlayer.seekTo(pct * duration, true);
+  } catch(_) {}
+});
+
+/* ── Main initMusicPlayer — wires up buttons & loads playlist ── */
+function initMusicPlayer() {
+  const playBtn   = document.getElementById('play-btn');
+  const prevBtn   = document.getElementById('prev-btn');
+  const nextBtn   = document.getElementById('next-btn');
+  const volSlider = document.getElementById('volume-slider');
+
+  /* Play / Pause toggle */
+  playBtn.addEventListener('click', () => {
+    if (musicPlaying) {
+      musicPause();
+    } else {
+      // First play needs user gesture — this IS the user gesture
+      if (!ytPlayer || !ytReady) {
+        // API not ready yet — retry in 500ms
+        setTimeout(() => playBtn.click(), 500);
+        return;
+      }
+      const videoId = extractYouTubeID(DATA.playlist[musicCurrent]?.url || '');
+      if (videoId) {
+        musicLoadTrack(musicCurrent, true);
+      } else {
+        musicNext(); // skip tracks with no URL
+      }
+    }
   });
 
-  loadTrack(0);
+  nextBtn.addEventListener('click', musicNext);
+  prevBtn.addEventListener('click', musicPrev);
 
-  // Daily rotation
-  const today = new Date().getDate();
-  current = today % playlist.length;
-  loadTrack(current);
+  /* Volume */
+  volSlider.addEventListener('input', function() {
+    musicVolume = +this.value;
+    this.style.background =
+      `linear-gradient(90deg, var(--pink) ${musicVolume}%, var(--glass-border) ${musicVolume}%)`;
+    if (ytPlayer && ytReady) ytPlayer.setVolume(musicVolume);
+  });
+
+  /* Daily rotation — start on a different track each day */
+  const dayIndex = new Date().getDate() % (DATA.playlist.length || 1);
+  musicCurrent   = dayIndex;
+
+  /* If YT API already ready (rare but possible), load now */
+  if (ytReady && ytPlayer) {
+    musicLoadTrack(musicCurrent, false);
+  }
+  /* Otherwise onYouTubeIframeAPIReady fires and calls musicLoadTrack */
+
+  /* ── Fetch live playlist from backend if running ── */
+  fetch('/api/playlist')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data?.playlist?.length) return;
+      // Merge backend playlist into DATA
+      DATA.playlist = data.playlist.map(s => ({
+        title:  s.title  || 'Unknown',
+        artist: s.artist || '',
+        emoji:  s.emoji  || '🎵',
+        url:    s.url    || '',
+        pinned: s.pinned || false,
+      }));
+      // Reload current track display with fresh data
+      const idx = data.daily_start ?? (new Date().getDate() % DATA.playlist.length);
+      musicCurrent = idx;
+      if (ytReady && ytPlayer) musicLoadTrack(musicCurrent, false);
+      else {
+        // Update UI labels immediately even before YT ready
+        const t = DATA.playlist[musicCurrent];
+        if (t) {
+          document.getElementById('music-title').textContent  = t.title;
+          document.getElementById('music-artist').textContent = t.artist;
+          document.getElementById('album-art').textContent    = t.emoji;
+        }
+      }
+    })
+    .catch(() => {}); // static mode — no backend, use DATA
 }
 
 /* ──────────────────────────────────────────
