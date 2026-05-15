@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "pinned": true,
+    "published": true,
+    "category": "Love Notes",
+    "date": "2025-05-12",
+    "title": "Everything I Never Said Out Loud",
+    "excerpt": "There are a thousand ways I try to say I love you every day — a look, a text, the way I reach for your hand...",
+    "content": "<p>There are a thousand ways I try to say I love you every day — a look, a text, the way I reach for your hand without thinking about it. But sometimes the biggest feelings hide in the smallest gestures.</p><blockquote>You are not just someone I love. You are the reason I understand what love actually means.</blockquote><p>I watch you sometimes when you don't notice, and I think: how did I get so lucky? Not in a disbelieving way. In the way where luck feels too small a word and the universe feels like it conspired, softly, on my behalf.</p><p>You are my favorite thing about being alive, <em>Naomi</em>. Every single day.</p>",
+    "created_at": "2025-05-12T10:00:00"
+  },
+  {
+    "id": 2,
+    "pinned": false,
+    "published": true,
+    "category": "Memories",
+    "date": "2025-04-28",
+    "title": "The Night We Got Lost on Purpose",
+    "excerpt": "We said we knew where we were going. We absolutely did not. And it became one of my favorite memories...",
+    "content": "<p>We said we knew where we were going. We absolutely did not. And somewhere between the wrong turn and the unexpected little garden we stumbled into, it became one of my favorite memories of us.</p><p>You weren't annoyed. You laughed. You took a photo of a cat sitting in a window. You said <em>adventures are just wrong turns you enjoy.</em></p><blockquote>Adventures are just wrong turns you enjoy. — Naomi, being perfect</blockquote>",
+    "created_at": "2025-04-28T18:30:00"
+  },
+  {
+    "id": 3,
+    "pinned": false,
+    "published": true,
+    "category": "Poems",
+    "date": "2025-04-10",
+    "title": "Written in Starlight",
+    "excerpt": "If I could write your name in the sky — not just in stars but in the space between them...",
+    "content": "<p style='white-space:pre-line;font-style:italic;line-height:2.2;'>If I could write your name in the sky\nNot just in stars but in the space between them\nThe quiet dark that holds everything together\n\nI would write it in the language\nThe universe used before words existed\nBefore sound, before light —\n\nIn the moment before the first breath\nOf everything\n\nThat is where you live in me.\n\nAlways.</p>",
+    "created_at": "2025-04-10T09:00:00"
+  },
+  {
+    "id": 4,
+    "pinned": false,
+    "published": true,
+    "category": "Daily Thoughts",
+    "date": "2025-05-01",
+    "title": "I Thought of You at 3pm for No Reason",
+    "excerpt": "Completely unprompted, in the middle of an ordinary afternoon, my mind just quietly said: Naomi.",
+    "content": "<p>Completely unprompted. No notification. No reminder. In the middle of an ordinary Tuesday afternoon — my mind just quietly said: <em>Naomi.</em></p><p>And everything felt a little softer after that.</p><p>I think that's what it means to love someone. They become the weather inside you. A soft, warm front that rolls in without warning and makes ordinary moments feel like they're lit from somewhere inside.</p>",
+    "created_at": "2025-05-01T15:00:00"
+  },
+  {
+    "id": 5,
+    "pinned": false,
+    "published": true,
+    "category": "Future Dreams",
+    "date": "2025-03-20",
+    "title": "All the Futures I Want With You",
+    "excerpt": "Morning coffee by a window somewhere we haven't been yet. A quiet house. Your laughter echoing...",
+    "content": "<p>Morning coffee by a window somewhere we haven't been yet. A quiet house that slowly fills with the things we love. Your laughter echoing off walls that are ours.</p><blockquote>I don't need the whole world. I just need you in whatever world we build.</blockquote>",
+    "created_at": "2025-03-20T08:00:00"
+  },
+  {
+    "id": 6,
+    "pinned": false,
+    "published": true,
+    "category": "Daily Thoughts",
+    "date": "2025-05-08",
+    "title": "Good Morning, My Favorite Person",
+    "excerpt": "Before the day begins, before anything requires my attention, my first thought is always you.",
+    "content": "<p>Before the day begins. Before anything requires my attention or energy or effort — my first thought is always you.</p><p>Not dramatically. Just quietly. Like a door opening to let in light.</p><p>Good morning, <em>Naomi</em>. I hope today is as beautiful as you are.</p>",
+    "created_at": "2025-05-08T07:00:00"
+  }
+]
