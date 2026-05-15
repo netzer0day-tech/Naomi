@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin ✦ Naomi's Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --black:#04040a; --deep:#080818; --purple-dark:#1a0a2e;
+  --purple:#6c2fa7; --purple-glow:#9b5de5;
+  --pink:#f72585; --pink-soft:#ff85b3; --cyan:#00f5ff;
+  --white-glow:rgba(255,255,255,0.92);
+  --glass:rgba(255,255,255,0.05); --glass-border:rgba(255,255,255,0.12);
+  --text-main:#f0e8ff; --text-muted:rgba(200,180,255,0.6);
+  --font-display:'Cinzel Decorative',serif;
+  --font-body:'Cormorant Garamond',serif;
+  --font-ui:'Rajdhani',sans-serif;
+  --glow-pink:0 0 20px rgba(247,37,133,0.6);
+  --glow-cyan:0 0 20px rgba(0,245,255,0.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--black);color:var(--text-main);font-family:var(--font-ui);min-height:100vh;}
+
+/* Layout */
+.admin-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{background:linear-gradient(180deg,rgba(26,10,46,0.95),rgba(8,8,24,0.98));
+  border-right:1px solid var(--glass-border);padding:32px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:0 24px 32px;border-bottom:1px solid var(--glass-border);margin-bottom:24px;}
+.sidebar-logo h1{font-family:var(--font-display);font-size:0.85rem;
+  background:linear-gradient(135deg,var(--pink),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sidebar-logo p{font-size:0.7rem;color:var(--text-muted);margin-top:4px;}
+
+.nav-section{padding:0 16px;margin-bottom:8px;}
+.nav-label{font-size:0.6rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:var(--text-muted);padding:0 8px;margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  cursor:pointer;transition:all 0.2s;font-size:0.82rem;color:var(--text-muted);
+  border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover,.nav-item.active{background:rgba(247,37,133,0.1);color:var(--pink);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;}
+
+/* Main content */
+.admin-main{padding:40px;overflow-y:auto;}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;}
+.admin-header h2{font-family:var(--font-display);font-size:1.2rem;
+  background:linear-gradient(135deg,var(--white-glow),var(--pink-soft));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* Panel */
+.panel{background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;
+  backdrop-filter:blur(20px);overflow:hidden;display:none;}
+.panel.active{display:block;}
+.panel-header{padding:20px 24px;border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:0.9rem;font-weight:500;color:var(--text-main);}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{padding:12px 16px;font-size:0.65rem;letter-spacing:0.2em;
+  text-transform:uppercase;color:var(--text-muted);text-align:left;
+  border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,0.02);}
+.data-table td{padding:14px 16px;font-size:0.82rem;color:var(--text-main);
+  border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+
+/* Form */
+.form-group{margin-bottom:20px;}
+.form-label{display:block;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:8px;}
+.form-input,.form-select,.form-textarea{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid var(--glass-border);border-radius:10px;
+  padding:12px 16px;color:var(--text-main);font-family:var(--font-ui);font-size:0.88rem;
+  transition:border-color 0.2s,box-shadow 0.2s;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{
+  border-color:var(--pink);box-shadow:var(--glow-pink);}
+.form-textarea{resize:vertical;min-height:140px;line-height:1.6;}
+.form-select option{background:var(--deep);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* Buttons */
+.btn{font-family:var(--font-ui);font-size:0.75rem;letter-spacing:0.15em;
+  text-transform:uppercase;padding:10px 24px;border-radius:30px;border:none;
+  cursor:pointer;transition:all 0.3s;}
+.btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;
+  box-shadow:0 4px 20px rgba(247,37,133,0.3);}
+.btn-primary:hover{box-shadow:0 8px 36px rgba(247,37,133,0.6);transform:translateY(-1px);}
+.btn-secondary{background:var(--glass);border:1px solid var(--glass-border);color:var(--text-main);}
+.btn-danger{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.3);color:#f87171;}
+.btn-small{padding:6px 14px;font-size:0.65rem;}
+.btn-icon{background:none;border:none;cursor:pointer;font-size:1rem;padding:4px 8px;
+  color:var(--text-muted);transition:color 0.2s;}
+.btn-icon:hover{color:var(--pink);}
+
+/* Badge */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.62rem;
+  letter-spacing:0.1em;text-transform:uppercase;}
+.badge-pink{background:rgba(247,37,133,0.15);color:var(--pink);}
+.badge-cyan{background:rgba(0,245,255,0.1);color:var(--cyan);}
+.badge-purple{background:rgba(155,93,229,0.15);color:var(--purple-glow);}
+.badge-gray{background:rgba(255,255,255,0.08);color:var(--text-muted);}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px;}
+.stat-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;
+  padding:20px 24px;backdrop-filter:blur(16px);}
+.stat-card-label{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.stat-card-value{font-family:var(--font-display);font-size:1.8rem;
+  background:linear-gradient(135deg,var(--pink),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-card-sub{font-size:0.7rem;color:var(--text-muted);margin-top:4px;}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(4,4,10,0.85);backdrop-filter:blur(16px);
+  z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:linear-gradient(135deg,rgba(26,10,46,0.98),rgba(8,8,24,0.99));
+  border:1px solid var(--glass-border);border-radius:20px;padding:36px;
+  max-width:600px;width:100%;max-height:85vh;overflow-y:auto;position:relative;}
+.modal-close-btn{position:absolute;top:16px;right:16px;background:var(--glass);
+  border:1px solid var(--glass-border);border-radius:50%;width:32px;height:32px;
+  cursor:pointer;color:var(--text-muted);font-size:0.9rem;display:flex;
+  align-items:center;justify-content:center;}
+.modal-close-btn:hover{color:var(--pink);}
+
+/* Toast */
+.toast{position:fixed;top:24px;right:24px;z-index:9999;
+  background:rgba(26,10,46,0.95);border:1px solid var(--glass-border);
+  border-radius:12px;padding:14px 20px;font-size:0.82rem;
+  transform:translateX(120%);transition:transform 0.4s ease;
+  box-shadow:0 8px 40px rgba(0,0,0,0.4);}
+.toast.show{transform:translateX(0);}
+.toast.success{border-color:var(--cyan);color:var(--cyan);}
+.toast.error{border-color:var(--pink);color:var(--pink);}
+
+/* Logout bar */
+.top-bar{display:flex;align-items:center;justify-content:flex-end;padding:16px 40px;
+  border-bottom:1px solid var(--glass-border);margin-bottom:0;}
+.top-bar a{font-size:0.75rem;color:var(--text-muted);text-decoration:none;letter-spacing:0.1em;}
+.top-bar a:hover{color:var(--pink);}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>✦ Naomi Admin</h1>
+      <p>Love Diary Control Panel</p>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Dashboard</div>
+      <button class="nav-item active" onclick="showPanel('dashboard',this)">
+        <span class="icon">🏠</span> Overview
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Content</div>
+      <button class="nav-item" onclick="showPanel('posts',this)">
+        <span class="icon">📝</span> Blog Posts
+      </button>
+      <button class="nav-item" onclick="showPanel('memories',this)">
+        <span class="icon">🌸</span> Memories
+      </button>
+      <button class="nav-item" onclick="showPanel('playlist',this)">
+        <span class="icon">🎵</span> Playlist
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Settings</div>
+      <button class="nav-item" onclick="showPanel('settings',this)">
+        <span class="icon">⚙️</span> Site Settings
+      </button>
+      <button class="nav-item" onclick="showPanel('reasons',this)">
+        <span class="icon">💜</span> Love Reasons
+      </button>
+    </div>
+
+    <div class="nav-section" style="margin-top:auto;padding-top:24px;border-top:1px solid var(--glass-border);margin-top:32px;">
+      <button class="nav-item" onclick="logout()">
+        <span class="icon">🚪</span> Logout
+      </button>
+      <a href="/" style="display:block;padding:10px 12px;font-size:0.75rem;color:var(--text-muted);text-decoration:none;">
+        ← View Blog
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="admin-main">
+
+    <!-- Dashboard -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="admin-header">
+        <h2>Dashboard</h2>
+        <span style="font-size:0.75rem;color:var(--text-muted)" id="dashboard-date"></span>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Blog Posts</div>
+          <div class="stat-card-value" id="stat-posts">—</div>
+          <div class="stat-card-sub">Published stories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Days Together</div>
+          <div class="stat-card-value" id="stat-days">—</div>
+          <div class="stat-card-sub">And counting ♥</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Playlist Songs</div>
+          <div class="stat-card-value" id="stat-songs">—</div>
+          <div class="stat-card-sub">In rotation</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Memories</div>
+          <div class="stat-card-value" id="stat-memories">—</div>
+          <div class="stat-card-sub">Timeline entries</div>
+        </div>
+      </div>
+
+      <div class="panel" style="display:block;margin-top:0;">
+        <div class="panel-header">
+          <span class="panel-title">Daily Message</span>
+        </div>
+        <div style="padding:24px;font-family:var(--font-body);font-size:1.05rem;
+          color:var(--text-muted);line-height:1.7;font-style:italic;" id="daily-msg">
+          Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- Posts panel -->
+    <div class="panel" id="panel-posts">
+      <div class="panel-header">
+        <span class="panel-title">Blog Posts</span>
+        <button class="btn btn-primary btn-small" onclick="openPostModal()">+ New Post</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Title</th><th>Category</th><th>Date</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="posts-table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Memories panel -->
+    <div class="panel" id="panel-memories">
+      <div class="panel-header">
+        <span class="panel-title">Memory Timeline</span>
+        <button class="btn btn-primary btn-small" onclick="openMemoryModal()">+ Add Memory</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Date Label</th><th>Emoji</th><th>Title</th><th>Description</th></tr>
+        </thead>
+        <tbody id="memories-table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Playlist panel -->
+    <div class="panel" id="panel-playlist">
+      <div class="panel-header">
+        <span class="panel-title">Music Playlist</span>
+        <button class="btn btn-primary btn-small" onclick="openSongModal()">+ Add Song</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Emoji</th><th>Title</th><th>Artist</th><th>Our Song</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="playlist-table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="panel" id="panel-settings">
+      <div class="panel-header">
+        <span class="panel-title">Site Settings</span>
+      </div>
+      <div style="padding:24px;max-width:600px;">
+        <div class="form-group">
+          <label class="form-label">Site Title</label>
+          <input type="text" class="form-input" id="set-title"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Her Name</label>
+            <input type="text" class="form-input" id="set-name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Anniversary Date</label>
+            <input type="date" class="form-input" id="set-anniversary"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline</label>
+          <input type="text" class="form-input" id="set-tagline"/>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings ♥</button>
+      </div>
+    </div>
+
+    <!-- Love Reasons -->
+    <div class="panel" id="panel-reasons">
+      <div class="panel-header">
+        <span class="panel-title">Reasons I Love You</span>
+        <button class="btn btn-primary btn-small" onclick="addReason()">+ Add Reason</button>
+      </div>
+      <div style="padding:24px;" id="reasons-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Post Modal -->
+<div class="modal-bg" id="post-modal">
+  <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeModal('post-modal')">✕</button>
+    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:24px;
+      background:linear-gradient(135deg,var(--pink),var(--cyan));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+      New Blog Post
+    </h3>
+    <input type="hidden" id="post-id"/>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" class="form-input" id="post-title" placeholder="Something beautiful..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="post-category">
+          <option>Love Notes</option><option>Memories</option><option>Poems</option>
+          <option>Daily Thoughts</option><option>Future Dreams</option><option>Photos</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="post-date"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Excerpt (short preview)</label>
+      <input type="text" class="form-input" id="post-excerpt" placeholder="A teaser..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Content (HTML supported)</label>
+      <textarea class="form-textarea" id="post-content" rows="8" placeholder="Write something beautiful..."></textarea>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;">
+        <input type="checkbox" id="post-pinned" style="accent-color:var(--pink)"/> Featured/Pinned
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;">
+        <input type="checkbox" id="post-published" checked style="accent-color:var(--pink)"/> Published
+      </label>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-primary" onclick="savePost()">Save Post ♥</button>
+      <button class="btn btn-secondary" onclick="closeModal('post-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Memory Modal -->
+<div class="modal-bg" id="memory-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close-btn" onclick="closeModal('memory-modal')">✕</button>
+    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:24px;
+      background:linear-gradient(135deg,var(--pink),var(--cyan));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">Add Memory</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date / Label</label>
+        <input type="text" class="form-input" id="mem-date" placeholder="e.g. Our First Date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji</label>
+        <input type="text" class="form-input" id="mem-emoji" placeholder="✨" maxlength="4"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" class="form-input" id="mem-title"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="mem-desc" rows="3"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="saveMemory()">Add Memory ✦</button>
+  </div>
+</div>
+
+<!-- Song Modal -->
+<div class="modal-bg" id="song-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close-btn" onclick="closeModal('song-modal')">✕</button>
+    <h3 style="font-family:var(--font-display);font-size:1rem;margin-bottom:24px;
+      background:linear-gradient(135deg,var(--pink),var(--cyan));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;">Add Song</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Song Title</label>
+        <input type="text" class="form-input" id="song-title"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Artist</label>
+        <input type="text" class="form-input" id="song-artist"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Emoji</label>
+        <input type="text" class="form-input" id="song-emoji" placeholder="🎵" maxlength="4"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Audio URL (optional)</label>
+        <input type="text" class="form-input" id="song-url" placeholder="https://..."/>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.8rem;margin-bottom:20px;">
+      <input type="checkbox" id="song-pinned" style="accent-color:var(--pink)"/> Our Song (pinned)
+    </label>
+    <button class="btn btn-primary" onclick="saveSong()">Add Song 🎵</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';  // relative — same origin
+
+/* ── Nav ── */
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  // Load data for panel
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'posts')     loadPosts();
+  if (name === 'memories')  loadMemories();
+  if (name === 'playlist')  loadPlaylist();
+  if (name === 'settings')  loadSettings();
+  if (name === 'reasons')   loadReasons();
+}
+
+/* ── Toast ── */
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── Modal ── */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ── Auth ── */
+async function logout() {
+  await fetch('/api/logout', { method:'POST' });
+  location.href = '/admin/login';
+}
+
+/* ── Dashboard ── */
+async function loadDashboard() {
+  document.getElementById('dashboard-date').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const [postsRes, playRes, memRes, cdRes, msgRes] = await Promise.all([
+    fetch('/api/posts').then(r=>r.json()),
+    fetch('/api/playlist').then(r=>r.json()),
+    fetch('/api/memories').then(r=>r.json()),
+    fetch('/api/countdown').then(r=>r.json()),
+    fetch('/api/daily-message').then(r=>r.json()),
+  ]);
+
+  document.getElementById('stat-posts').textContent    = postsRes.total || 0;
+  document.getElementById('stat-songs').textContent    = playRes.total  || 0;
+  document.getElementById('stat-memories').textContent = (memRes.length || 0);
+  document.getElementById('stat-days').textContent     = cdRes.days_together || 0;
+  document.getElementById('daily-msg').textContent     = msgRes.message || '';
+}
+
+/* ── Posts ── */
+async function loadPosts() {
+  const data = await fetch('/api/posts').then(r=>r.json());
+  const tbody = document.getElementById('posts-table-body');
+  tbody.innerHTML = '';
+  data.posts.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${p.title}</strong>${p.pinned?' <span class="badge badge-pink">📌 Pinned</span>':''}</td>
+      <td><span class="badge badge-purple">${p.category}</span></td>
+      <td>${p.date}</td>
+      <td><span class="badge ${p.published?'badge-cyan':'badge-gray'}">${p.published?'Live':'Draft'}</span></td>
+      <td>
+        <button class="btn-icon" onclick="editPost(${p.id})" title="Edit">✏️</button>
+        <button class="btn-icon" onclick="deletePost(${p.id})" title="Delete">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openPostModal(postData) {
+  document.getElementById('post-id').value       = postData?.id    || '';
+  document.getElementById('post-title').value    = postData?.title    || '';
+  document.getElementById('post-excerpt').value  = postData?.excerpt  || '';
+  document.getElementById('post-content').value  = postData?.content  || '';
+  document.getElementById('post-category').value = postData?.category || 'Love Notes';
+  document.getElementById('post-date').value     = postData?.date     || new Date().toISOString().split('T')[0];
+  document.getElementById('post-pinned').checked    = postData?.pinned    || false;
+  document.getElementById('post-published').checked = postData?.published ?? true;
+  openModal('post-modal');
+}
+
+async function editPost(id) {
+  const post = await fetch(`/api/posts/${id}`).then(r=>r.json());
+  openPostModal(post);
+}
+
+async function savePost() {
+  const id = document.getElementById('post-id').value;
+  const body = {
+    title:     document.getElementById('post-title').value,
+    excerpt:   document.getElementById('post-excerpt').value,
+    content:   document.getElementById('post-content').value,
+    category:  document.getElementById('post-category').value,
+    date:      document.getElementById('post-date').value,
+    pinned:    document.getElementById('post-pinned').checked,
+    published: document.getElementById('post-published').checked,
+  };
+  const url    = id ? `/api/posts/${id}` : '/api/posts';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, {
+    method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  }).then(r=>r.json());
+
+  if (res.success) {
+    toast('Post saved ♥'); closeModal('post-modal'); loadPosts();
+  } else {
+    toast('Error saving post', 'error');
+  }
+}
+
+async function deletePost(id) {
+  if (!confirm('Delete this post?')) return;
+  const res = await fetch(`/api/posts/${id}`,{method:'DELETE'}).then(r=>r.json());
+  if (res.success) { toast('Post deleted'); loadPosts(); }
+}
+
+/* ── Memories ── */
+async function loadMemories() {
+  const data  = await fetch('/api/memories').then(r=>r.json());
+  const tbody = document.getElementById('memories-table-body');
+  tbody.innerHTML = '';
+  data.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.date}</td><td>${m.emoji}</td><td>${m.title}</td><td style="color:var(--text-muted)">${m.desc}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openMemoryModal() { openModal('memory-modal'); }
+
+async function saveMemory() {
+  const body = {
+    date:  document.getElementById('mem-date').value,
+    emoji: document.getElementById('mem-emoji').value || '✨',
+    title: document.getElementById('mem-title').value,
+    desc:  document.getElementById('mem-desc').value,
+  };
+  const res = await fetch('/api/memories',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  }).then(r=>r.json());
+  if (res.success) { toast('Memory added ✦'); closeModal('memory-modal'); loadMemories(); }
+}
+
+/* ── Playlist ── */
+async function loadPlaylist() {
+  const data  = await fetch('/api/playlist').then(r=>r.json());
+  const tbody = document.getElementById('playlist-table-body');
+  tbody.innerHTML = '';
+  data.playlist.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.emoji}</td>
+      <td><strong>${s.title}</strong></td>
+      <td style="color:var(--text-muted)">${s.artist}</td>
+      <td>${s.pinned?'<span class="badge badge-pink">Our Song</span>':'-'}</td>
+      <td><button class="btn-icon" onclick="deleteSong(${s.id})">🗑️</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openSongModal() { openModal('song-modal'); }
+
+async function saveSong() {
+  const body = {
+    title:  document.getElementById('song-title').value,
+    artist: document.getElementById('song-artist').value,
+    emoji:  document.getElementById('song-emoji').value  || '🎵',
+    url:    document.getElementById('song-url').value,
+    pinned: document.getElementById('song-pinned').checked,
+  };
+  const res = await fetch('/api/playlist',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  }).then(r=>r.json());
+  if (res.success) { toast('Song added 🎵'); closeModal('song-modal'); loadPlaylist(); }
+}
+
+async function deleteSong(id) {
+  if (!confirm('Remove this song?')) return;
+  await fetch(`/api/playlist/${id}`,{method:'DELETE'});
+  toast('Song removed'); loadPlaylist();
+}
+
+/* ── Settings ── */
+async function loadSettings() {
+  const s = await fetch('/api/settings').then(r=>r.json());
+  document.getElementById('set-title').value       = s.site_title       || '';
+  document.getElementById('set-name').value        = s.owner_name       || '';
+  document.getElementById('set-anniversary').value = s.anniversary_date || '';
+  document.getElementById('set-tagline').value     = s.tagline          || '';
+}
+
+async function saveSettings() {
+  const body = {
+    site_title:       document.getElementById('set-title').value,
+    owner_name:       document.getElementById('set-name').value,
+    anniversary_date: document.getElementById('set-anniversary').value,
+    tagline:          document.getElementById('set-tagline').value,
+  };
+  const res = await fetch('/api/settings',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  }).then(r=>r.json());
+  if (res.success) toast('Settings saved ♥');
+}
+
+/* ── Reasons ── */
+async function loadReasons() {
+  const s    = await fetch('/api/settings').then(r=>r.json());
+  const list = document.getElementById('reasons-list');
+  list.innerHTML = '';
+  (s.reasons || []).forEach((r, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;';
+    div.innerHTML = `
+      <span style="font-size:1.4rem;">${r.icon}</span>
+      <span style="flex:1;font-size:0.88rem;color:var(--text-main);">${r.text}</span>
+    `;
+    list.appendChild(div);
+  });
+
+  // Add form
+  const form = document.createElement('div');
+  form.style.cssText = 'display:flex;gap:12px;margin-top:16px;';
+  form.innerHTML = `
+    <input type="text" class="form-input" id="reason-icon" placeholder="🌸" style="width:60px;" maxlength="4"/>
+    <input type="text" class="form-input" id="reason-text" placeholder="Because you..."/>
+    <button class="btn btn-primary btn-small" onclick="saveReason()">Add</button>
+  `;
+  list.appendChild(form);
+}
+
+async function saveReason() {
+  const s    = await fetch('/api/settings').then(r=>r.json());
+  const icon = document.getElementById('reason-icon').value || '♥';
+  const text = document.getElementById('reason-text').value;
+  if (!text) return;
+
+  s.reasons = [...(s.reasons||[]), { icon, text }];
+  const res = await fetch('/api/settings',{
+    method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)
+  }).then(r=>r.json());
+  if (res.success) { toast('Reason added ♥'); loadReasons(); }
+}
+
+function addReason() {
+  document.getElementById('reason-text')?.focus();
+}
+
+/* ── Init ── */
+loadDashboard();
+</script>
+</body>
+</html>

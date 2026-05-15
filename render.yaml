@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: naomi-blog
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        value: naomi2024♥   # change this!
+      - key: FLASK_ENV
+        value: production
+      - key: ANTHROPIC_API_KEY
+        value: ""            # optional
+    disk:
+      name: naomi-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
